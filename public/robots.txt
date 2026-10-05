@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://billing-book-j.vercel.app/sitemap.xml
