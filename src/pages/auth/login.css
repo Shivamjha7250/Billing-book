@@ -1,0 +1,458 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: #dce3f6;
+}
+
+/* ਪੇਜ ਦਾ ਬੈਕਗਰਾਊਂਡ ਰੈਪਰ */
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at 10% 15%, #f1f4fd 0%, #dbe3f8 100%);
+}
+
+/* ਮੁੱਖ ਕਾਰਡ ਕੰਟੇਨਰ */
+.login-container {
+  display: flex;
+  width: 100%;
+  max-width: 1220px;
+  min-height: 720px;
+  background: #ffffff;
+  border-radius: 34px;
+  overflow: hidden;
+  box-shadow: 0 25px 65px -12px rgba(22, 28, 80, 0.22);
+}
+
+/* ================= ਖੱਬਾ ਬ੍ਰਾਂਡ ਪੈਨਲ ================= */
+.login-brand-panel {
+  flex: 1.35;
+  background: radial-gradient(circle at 80% 55%, #3f1ecc 0%, transparent 60%),
+              linear-gradient(150deg, #090533 0%, #110d54 36%, #20137d 70%, #3a16bf 100%);
+  color: #ffffff;
+  padding: 44px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ਲੋਗੋ ਬਾਕਸ */
+.company-logo-box {
+  width: 95px;
+  height: 60px;
+  background: #ffffff;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  margin-bottom: 24px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14);
+}
+
+.login-company-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ਬ੍ਰਾਂਡ ਸਿਰਲੇਖ */
+.brand-title {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  margin-bottom: 4px;
+  letter-spacing: -0.6px;
+}
+
+.brand-title span {
+  color: #8372ff !important;
+}
+
+.brand-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c9c5fd;
+  margin-bottom: 8px;
+}
+
+.brand-desc {
+  font-size: 13.5px;
+  color: #a4a0cf;
+  line-height: 1.5;
+  margin-bottom: 28px;
+  max-width: 410px;
+}
+
+/* ਵਿਚਕਾਰਲਾ ਲੇਆਉਟ */
+.brand-middle-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  position: relative;
+}
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 220px;
+}
+
+.brand-feature {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.feature-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.feature-icon.icon-purple {
+  background: #5036dd;
+  font-size: 16px;
+}
+
+.feature-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.feature-text h4 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.feature-text p {
+  font-size: 11.5px;
+  color: #928ebd;
+}
+
+/* ਮੌਕਅੱਪ ਚਿੱਤਰ ਕੰਟੇਨਰ */
+.brand-mockup-wrap {
+  width: 340px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.billing-3d-mockup {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 32px rgba(0, 0, 0, 0.4));
+  transform: scale(1.05);
+}
+
+/* ਹੇਠਲੇ ਅੰਕੜੇ (ਸਹੀ ਸਪੇਸਿੰਗ ਵਾਲਾ ਕੋਡ) */
+.brand-stats {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 36px;
+  padding-top: 24px;
+  padding-bottom: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 24px;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.stat-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.stat-box strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.stat-box p {
+  font-size: 11px;
+  color: #a5a2d4;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ================= ਸੱਜਾ ਲੌਗਇਨ ਫਾਰਮ ਪੈਨਲ ================= */
+.login-form-panel {
+  flex: 1;
+  padding: 38px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #fafbff;
+}
+
+.security-tag-wrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1edfe;
+  border: 1px solid #e1d8fd;
+  padding: 7px 14px;
+  border-radius: 12px;
+}
+
+.badge-icon {
+  font-size: 14px;
+}
+
+.security-badge strong {
+  display: block;
+  font-size: 11px;
+  color: #5533e4;
+}
+
+.security-badge p {
+  font-size: 9.5px;
+  color: #816beb;
+}
+
+.login-form-wrapper {
+  max-width: 380px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.login-heading h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #171725;
+}
+
+.login-heading h2 span {
+  color: #5d3be6;
+}
+
+.login-heading p {
+  font-size: 13px;
+  color: #696974;
+  margin: 4px 0 22px;
+}
+
+/* ਗੂਗਲ ਬਟਨ */
+.google-login-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e5ec;
+  background: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ਡਿਵਾਈਡਰ */
+.login-divider {
+  display: flex;
+  align-items: center;
+  margin: 18px 0;
+  gap: 12px;
+}
+
+.login-divider span {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.login-divider p {
+  font-size: 10.5px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+/* ਇਨਪੁਟ ਫੀਲਡਾਂ */
+.login-field {
+  margin-bottom: 15px;
+}
+
+.login-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6px;
+}
+
+.input-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e2e5ec;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0 14px;
+}
+
+.input-box:focus-within {
+  border-color: #5d3be6;
+  box-shadow: 0 0 0 3px rgba(93, 59, 230, 0.12);
+}
+
+.input-icon {
+  font-size: 13px;
+  margin-right: 10px;
+  opacity: 0.65;
+}
+
+.input-box input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 12px 0;
+  font-size: 13.5px;
+  color: #111827;
+}
+
+.input-box input::placeholder {
+  color: #9ca3af;
+}
+
+.toggle-password {
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 14px;
+}
+
+/* ਵਿਕਲਪ (Options) */
+.login-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 20px;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.forgot-password {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 700;
+  color: #5d3be6;
+  cursor: pointer;
+}
+
+/* ਸਾਈਨ-ਇਨ ਬਟਨ */
+.sign-in-button {
+  width: 100%;
+  background: linear-gradient(90deg, #5835e5 0%, #7653f5 100%);
+  color: #ffffff;
+  border: none;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(93, 59, 230, 0.28);
+}
+
+.sign-in-button:hover {
+  background: linear-gradient(90deg, #4d28dc 0%, #6841ee 100%);
+}
+
+.secure-login {
+  text-align: center;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 18px;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+/* ਮੋਬਾਈਲ ਤੇ ਟੈਬਲੇਟ ਲਈ */
+@media (max-width: 960px) {
+  .login-container {
+    flex-direction: column;
+  }
+  .login-brand-panel {
+    display: none;
+  }
+}
