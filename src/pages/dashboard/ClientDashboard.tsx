@@ -27,6 +27,7 @@ interface ServiceItem {
 export default function ClientDashboard() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "customers" | "services" | "payments" | "reports" | "settings">("dashboard");
   const [darkMode, setDarkMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [company, setCompany] = useState<any>(null);
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
@@ -55,7 +56,7 @@ export default function ClientDashboard() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
   const [savingService, setSavingService] = useState(false);
 
-  // Settings inputs (Company profile, Bank, UPI, Logo)
+  // Settings inputs
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
   const [companyPhone, setCompanyPhone] = useState("");
@@ -144,7 +145,6 @@ export default function ClientDashboard() {
     }
   };
 
-  // Local Logo File Upload
   const handleLocalLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -157,7 +157,6 @@ export default function ClientDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // Add / Edit Service (Duplicate Check Included)
   const handleSaveService = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = newServiceName.trim();
@@ -167,7 +166,7 @@ export default function ClientDashboard() {
       (s) => s.name.toLowerCase() === trimmedName.toLowerCase() && s.id !== editingServiceId
     );
     if (isDuplicate) {
-      return alert(`A service named '${trimmedName}' already exists. Please choose a different name or edit the existing service.`);
+      return alert(`A service named '${trimmedName}' already exists.`);
     }
 
     setSavingService(true);
@@ -251,7 +250,6 @@ export default function ClientDashboard() {
     setBillItems(updated);
   };
 
-  // Save Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!companyName.trim()) return alert("Company name is required.");
@@ -324,7 +322,6 @@ export default function ClientDashboard() {
     }
   };
 
-  // Bill Calculations
   const subTotal = billItems.reduce((acc, curr) => acc + (Number(curr.qty) || 0) * (Number(curr.rate) || 0), 0);
   const taxAmount = (subTotal * taxPercent) / 100;
   const grandTotal = subTotal + taxAmount;
@@ -384,7 +381,6 @@ export default function ClientDashboard() {
     window.open(phone ? `https://wa.me/91${phone}?text=${msg}` : `https://wa.me/?text=${msg}`, "_blank");
   };
 
-  // CLEAN PDF PRINT METHOD (REMOVES URL, HEADER, FOOTER, BUTTONS ENTIRELY)
   const triggerCleanPrint = () => {
     const printContent = document.getElementById("clean-invoice-print-area");
     if (!printContent) return;
@@ -444,7 +440,6 @@ export default function ClientDashboard() {
     }, 400);
   };
 
-  // Grouped Unique Customers list
   const customersList = useMemo(() => {
     const map = new Map<string, { name: string; phone: string; totalBills: number; totalAmount: number; invoices: InvoiceRecord[] }>();
     invoices.forEach((inv) => {
@@ -521,60 +516,101 @@ export default function ClientDashboard() {
         inputBorder: "#cbd5e1",
       };
 
+  const navItems = [
+    { id: "dashboard", label: "📊 Dashboard" },
+    { id: "customers", label: "👥 Customers" },
+    { id: "services", label: "🏷️ Services & Rates" },
+    { id: "payments", label: "💰 Payments & Due" },
+    { id: "reports", label: "📈 Sales Reports" },
+    { id: "settings", label: "⚙️ Settings" },
+  ];
+
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
+      <div className="min-h-screen flex items-center justify-center font-sans">
         Loading Workspace...
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: theme.bg, color: theme.text, fontFamily: "system-ui, sans-serif" }}>
-      {/* 1. SIDEBAR */}
-      <aside style={{ width: "260px", backgroundColor: theme.sidebar, borderRight: `1px solid ${theme.cardBorder}`, display: "flex", flexDirection: "column", padding: "20px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px", padding: "0 8px" }}>
+    <div
+      style={{ backgroundColor: theme.bg, color: theme.text }}
+      className="min-h-screen flex flex-col md:flex-row font-sans overflow-x-hidden"
+    >
+      {/* MOBILE TOP NAVBAR */}
+      <div
+        style={{ backgroundColor: theme.sidebar, borderColor: theme.cardBorder }}
+        className="md:hidden flex items-center justify-between p-4 border-b sticky top-0 z-40"
+      >
+        <div className="flex items-center gap-2">
           {company?.logo_url ? (
-            <img src={company.logo_url} alt="Logo" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "contain", border: `1px solid ${theme.cardBorder}` }} />
+            <img src={company.logo_url} alt="Logo" className="w-8 h-8 rounded object-contain" />
           ) : (
-            <div style={{ width: "40px", height: "40px", borderRadius: "8px", backgroundColor: "#4f46e5", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "18px" }}>
+            <div className="w-8 h-8 rounded bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
               {company?.name?.slice(0, 1) || "J"}
             </div>
           )}
-          <div>
-            <div style={{ fontWeight: "700", fontSize: "16px" }}>{company?.name || "Workspace"}</div>
-            <div style={{ fontSize: "11px", color: theme.textSecondary }}>Billing Suite</div>
+          <span className="font-bold text-base truncate max-w-[170px]">{company?.name || "Workspace"}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBillModal(true)}
+            className="bg-indigo-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold"
+          >
+            + Bill
+          </button>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ backgroundColor: theme.navHover }}
+            className="p-2 rounded-lg text-sm border"
+          >
+            {mobileMenuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+      </div>
+
+      {/* SIDEBAR (Desktop Fixed, Mobile Drawer) */}
+      <aside
+        style={{ backgroundColor: theme.sidebar, borderColor: theme.cardBorder }}
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 border-r flex flex-col p-4 transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-center justify-between mb-6 px-2">
+          <div className="flex items-center gap-2.5">
+            {company?.logo_url ? (
+              <img src={company.logo_url} alt="Logo" className="w-9 h-9 rounded-lg object-contain border" />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+                {company?.name?.slice(0, 1) || "J"}
+              </div>
+            )}
+            <div className="overflow-hidden">
+              <div className="font-bold text-sm truncate">{company?.name || "Workspace"}</div>
+              <div style={{ color: theme.textSecondary }} className="text-[11px]">Billing Suite</div>
+            </div>
           </div>
+          <button onClick={() => setMobileMenuOpen(false)} className="md:hidden text-lg p-1">
+            ✕
+          </button>
         </div>
 
-        {/* Navigation */}
-        <nav style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
-          {[
-            { id: "dashboard", label: "📊 Dashboard" },
-            { id: "customers", label: "👥 Customers" },
-            { id: "services", label: "🏷️ Services & Rates" },
-            { id: "payments", label: "💰 Payments & Outstanding" },
-            { id: "reports", label: "📈 Sales Reports" },
-            { id: "settings", label: "⚙️ Company & Bank Settings" },
-          ].map((item) => (
+        {/* Navigation Tabs */}
+        <nav className="flex flex-col gap-1.5 flex-1">
+          {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id as any);
                 setSelectedCustomer(null);
+                setMobileMenuOpen(false);
               }}
               style={{
-                textAlign: "left",
-                padding: "12px 16px",
-                borderRadius: "10px",
-                border: "none",
-                fontSize: "14px",
-                fontWeight: activeTab === item.id ? "700" : "500",
                 backgroundColor: activeTab === item.id ? "#4f46e5" : "transparent",
                 color: activeTab === item.id ? "#ffffff" : theme.textSecondary,
-                cursor: "pointer",
-                transition: "all 0.2s",
               }}
+              className="text-left py-2.5 px-3.5 rounded-lg text-sm font-semibold transition"
             >
               {item.label}
             </button>
@@ -582,87 +618,74 @@ export default function ClientDashboard() {
         </nav>
 
         {/* Controls */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderTop: `1px solid ${theme.cardBorder}`, paddingTop: "16px" }}>
+        <div style={{ borderColor: theme.cardBorder }} className="flex flex-col gap-2 border-t pt-4 mt-2">
           <button
             onClick={() => setDarkMode(!darkMode)}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              border: `1px solid ${theme.cardBorder}`,
-              backgroundColor: "transparent",
-              color: theme.text,
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
+            style={{ borderColor: theme.cardBorder }}
+            className="p-2.5 rounded-lg border text-xs font-semibold text-center"
           >
             {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
           </button>
           <button
             onClick={() => supabase.auth.signOut().then(() => (window.location.href = "/"))}
-            style={{
-              padding: "10px",
-              borderRadius: "8px",
-              border: "none",
-              backgroundColor: "#fee2e2",
-              color: "#dc2626",
-              fontWeight: "600",
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
+            className="p-2.5 rounded-lg bg-red-100 text-red-700 text-xs font-bold text-center"
           >
             Sign Out
           </button>
         </div>
       </aside>
 
-      {/* 2. MAIN CONTENT AREA */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-        <header style={{ height: "64px", borderBottom: `1px solid ${theme.cardBorder}`, backgroundColor: theme.sidebar, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 32px" }}>
-          <div style={{ fontSize: "14px", color: theme.textSecondary }}>
-            Account: <b>{user?.email}</b>
+      {/* MOBILE OVERLAY */}
+      {mobileMenuOpen && (
+        <div
+          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        />
+      )}
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* DESKTOP HEADER */}
+        <header
+          style={{ backgroundColor: theme.sidebar, borderColor: theme.cardBorder }}
+          className="hidden md:flex h-16 border-b items-center justify-between px-8"
+        >
+          <div style={{ color: theme.textSecondary }} className="text-sm">
+            Account: <b style={{ color: theme.text }}>{user?.email}</b>
           </div>
           <button
             onClick={() => setShowBillModal(true)}
-            style={{
-              backgroundColor: "#4f46e5",
-              color: "#ffffff",
-              border: "none",
-              padding: "9px 18px",
-              borderRadius: "10px",
-              fontWeight: "600",
-              fontSize: "14px",
-              cursor: "pointer",
-            }}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-semibold text-sm transition"
           >
             + Create Invoice
           </button>
         </header>
 
-        <main style={{ padding: "32px", display: "flex", flexDirection: "column", gap: "24px" }}>
+        <main className="p-4 sm:p-6 md:p-8 flex flex-col gap-6 max-w-full">
           {/* TAB: DASHBOARD */}
           {activeTab === "dashboard" && (
             <>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "20px" }}>
-                <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding: "20px", borderRadius: "14px" }}>
-                  <div style={{ fontSize: "12px", color: theme.textSecondary, fontWeight: "600" }}>TOTAL REVENUE</div>
-                  <div style={{ fontSize: "28px", fontWeight: "700", marginTop: "8px" }}>₹{totalSales.toLocaleString("en-IN")}</div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border p-4 rounded-xl">
+                  <div style={{ color: theme.textSecondary }} className="text-[11px] font-bold">TOTAL REVENUE</div>
+                  <div className="text-lg sm:text-2xl font-extrabold mt-1">₹{totalSales.toLocaleString("en-IN")}</div>
                 </div>
-                <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding: "20px", borderRadius: "14px" }}>
-                  <div style={{ fontSize: "12px", color: "#16a34a", fontWeight: "600" }}>PAID COLLECTED</div>
-                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#16a34a", marginTop: "8px" }}>₹{totalReceived.toLocaleString("en-IN")}</div>
+                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border p-4 rounded-xl">
+                  <div className="text-[11px] font-bold text-emerald-600">PAID COLLECTED</div>
+                  <div className="text-lg sm:text-2xl font-extrabold text-emerald-600 mt-1">₹{totalReceived.toLocaleString("en-IN")}</div>
                 </div>
-                <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding: "20px", borderRadius: "14px" }}>
-                  <div style={{ fontSize: "12px", color: "#dc2626", fontWeight: "600" }}>OUTSTANDING DUE</div>
-                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#dc2626", marginTop: "8px" }}>₹{totalPending.toLocaleString("en-IN")}</div>
+                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border p-4 rounded-xl">
+                  <div className="text-[11px] font-bold text-red-600">DUE OUTSTANDING</div>
+                  <div className="text-lg sm:text-2xl font-extrabold text-red-600 mt-1">₹{totalPending.toLocaleString("en-IN")}</div>
                 </div>
-                <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, padding: "20px", borderRadius: "14px" }}>
-                  <div style={{ fontSize: "12px", color: theme.textSecondary, fontWeight: "600" }}>ACTIVE CUSTOMERS</div>
-                  <div style={{ fontSize: "28px", fontWeight: "700", color: "#4f46e5", marginTop: "8px" }}>{customersList.length}</div>
+                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border p-4 rounded-xl">
+                  <div style={{ color: theme.textSecondary }} className="text-[11px] font-bold">ACTIVE CLIENTS</div>
+                  <div className="text-lg sm:text-2xl font-extrabold text-indigo-600 mt-1">{customersList.length}</div>
                 </div>
               </div>
 
-              <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-                <h3 style={{ margin: "0 0 16px 0", fontSize: "18px" }}>Recent Invoices</h3>
+              <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-bold mb-4">Recent Invoices</h3>
                 <InvoiceTable
                   invoices={invoices.slice(0, 10)}
                   theme={theme}
@@ -677,64 +700,56 @@ export default function ClientDashboard() {
 
           {/* TAB: CUSTOMERS */}
           {activeTab === "customers" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
+            <div className="flex flex-col gap-6">
+              <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5">
                   <div>
-                    <h3 style={{ margin: 0, fontSize: "18px" }}>Customer Directory</h3>
-                    <p style={{ margin: "4px 0 0", fontSize: "13px", color: theme.textSecondary }}>
-                      Comprehensive customer directory, contact numbers, and billing transactions.
+                    <h3 className="text-base sm:text-lg font-bold">Customer Directory</h3>
+                    <p style={{ color: theme.textSecondary }} className="text-xs mt-0.5">
+                      Contacts, bills count aur transactions ledger.
                     </p>
                   </div>
-                  <div style={{ position: "relative", minWidth: "260px" }}>
+                  <div className="w-full sm:w-72">
                     <input
                       type="text"
                       placeholder="🔍 Search name or mobile..."
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
-                      style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
                     />
                   </div>
                 </div>
 
                 {customersList.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "32px", color: theme.textSecondary, fontSize: "14px" }}>
+                  <div style={{ color: theme.textSecondary }} className="text-center py-8 text-sm">
                     No matching customer records found.
                   </div>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse min-w-[500px]">
                       <thead>
-                        <tr style={{ borderBottom: `1px solid ${theme.cardBorder}`, color: theme.textSecondary, textTransform: "uppercase", fontSize: "11px" }}>
-                          <th style={{ padding: "10px" }}>Customer Name</th>
-                          <th style={{ padding: "10px" }}>Mobile Number</th>
-                          <th style={{ padding: "10px" }}>Total Invoices</th>
-                          <th style={{ padding: "10px" }}>Total Spend</th>
-                          <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
+                        <tr style={{ borderColor: theme.cardBorder, color: theme.textSecondary }} className="border-b text-[11px] uppercase">
+                          <th className="p-2.5">Name</th>
+                          <th className="p-2.5">Mobile</th>
+                          <th className="p-2.5">Bills</th>
+                          <th className="p-2.5">Total Spend</th>
+                          <th className="p-2.5 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {customersList.map((c, idx) => (
-                          <tr key={idx} style={{ borderBottom: `1px solid ${theme.cardBorder}` }}>
-                            <td style={{ padding: "12px 10px", fontWeight: "600" }}>{c.name}</td>
-                            <td style={{ padding: "12px 10px", color: theme.textSecondary }}>{c.phone}</td>
-                            <td style={{ padding: "12px 10px", fontWeight: "700" }}>{c.totalBills} Invoices</td>
-                            <td style={{ padding: "12px 10px", fontWeight: "700", color: "#16a34a" }}>₹{c.totalAmount.toLocaleString("en-IN")}</td>
-                            <td style={{ padding: "12px 10px", textAlign: "right" }}>
+                          <tr key={idx} style={{ borderColor: theme.cardBorder }} className="border-b">
+                            <td className="p-2.5 font-semibold">{c.name}</td>
+                            <td style={{ color: theme.textSecondary }} className="p-2.5">{c.phone}</td>
+                            <td className="p-2.5 font-bold">{c.totalBills} Bills</td>
+                            <td className="p-2.5 font-bold text-emerald-600">₹{c.totalAmount.toLocaleString("en-IN")}</td>
+                            <td className="p-2.5 text-right">
                               <button
                                 onClick={() => setSelectedCustomer(c.name)}
-                                style={{
-                                  backgroundColor: "#4f46e5",
-                                  color: "#ffffff",
-                                  border: "none",
-                                  padding: "6px 14px",
-                                  borderRadius: "6px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  cursor: "pointer",
-                                }}
+                                className="bg-indigo-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded"
                               >
-                                View Invoices ({c.totalBills})
+                                View ({c.totalBills})
                               </button>
                             </td>
                           </tr>
@@ -746,24 +761,15 @@ export default function ClientDashboard() {
               </div>
 
               {selectedCustomer && (
-                <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: "16px" }}>
-                        Invoices for: <span style={{ color: "#4f46e5" }}>{selectedCustomer}</span>
-                      </h4>
-                      <p style={{ margin: "2px 0 0", fontSize: "12px", color: theme.textSecondary }}>
-                        All historical billing records for this customer are listed below.
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedCustomer(null)}
-                      style={{ background: "none", border: "none", color: "#dc2626", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
-                    >
+                <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm sm:text-base font-bold">
+                      Invoices for: <span className="text-indigo-600">{selectedCustomer}</span>
+                    </h4>
+                    <button onClick={() => setSelectedCustomer(null)} className="text-red-500 font-bold text-xs">
                       Close View ✕
                     </button>
                   </div>
-
                   <InvoiceTable
                     invoices={invoices.filter((i) => i.customer_name.toLowerCase() === selectedCustomer.toLowerCase())}
                     theme={theme}
@@ -780,29 +786,30 @@ export default function ClientDashboard() {
 
           {/* TAB: SERVICES */}
           {activeTab === "services" && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "24px" }}>
-              <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-                <h3 style={{ margin: "0 0 6px 0", fontSize: "18px" }}>
+            <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
+              <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+                <h3 className="text-base font-bold mb-1">
                   {editingServiceId ? "✏️ Edit Service" : "+ Add New Service"}
                 </h3>
-                <p style={{ fontSize: "12px", color: theme.textSecondary, marginBottom: "20px" }}>
-                  {editingServiceId ? "Modify service name and default rate." : "Duplicate names are automatically prevented."}
+                <p style={{ color: theme.textSecondary }} className="text-xs mb-4">
+                  Default price rate set karke quick billing auto-fill karein.
                 </p>
 
-                <form onSubmit={handleSaveService} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                <form onSubmit={handleSaveService} className="flex flex-col gap-3">
                   <div>
-                    <label style={labelStyle}>Service / Product Name *</label>
+                    <label className="block text-[11px] font-bold mb-1">Service / Item Name *</label>
                     <input
                       type="text"
-                      placeholder="e.g. Website Design or Repair"
+                      placeholder="e.g. Website Design"
                       required
                       value={newServiceName}
                       onChange={(e) => setNewServiceName(e.target.value)}
-                      style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
                     />
                   </div>
                   <div>
-                    <label style={labelStyle}>Default Price / Rate (₹) *</label>
+                    <label className="block text-[11px] font-bold mb-1">Default Rate (₹) *</label>
                     <input
                       type="number"
                       min="0"
@@ -810,39 +817,25 @@ export default function ClientDashboard() {
                       required
                       value={newServiceRate}
                       onChange={(e) => setNewServiceRate(e.target.value === "" ? "" : Number(e.target.value))}
-                      style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
                     />
                   </div>
-                  <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                  <div className="flex gap-2 mt-2">
                     <button
                       type="submit"
                       disabled={savingService}
-                      style={{
-                        flex: 1,
-                        backgroundColor: editingServiceId ? "#16a34a" : "#4f46e5",
-                        color: "#fff",
-                        border: "none",
-                        padding: "10px",
-                        borderRadius: "8px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                      }}
+                      className={`flex-1 py-2.5 rounded-lg text-white font-bold text-xs transition ${
+                        editingServiceId ? "bg-emerald-600 hover:bg-emerald-700" : "bg-indigo-600 hover:bg-indigo-700"
+                      }`}
                     >
-                      {savingService ? "Saving..." : editingServiceId ? "Update Service" : "Save Service"}
+                      {savingService ? "Saving..." : editingServiceId ? "Update" : "Save Service"}
                     </button>
                     {editingServiceId && (
                       <button
                         type="button"
                         onClick={handleCancelEditService}
-                        style={{
-                          backgroundColor: "#f1f5f9",
-                          color: "#475569",
-                          border: "none",
-                          padding: "10px 16px",
-                          borderRadius: "8px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                        }}
+                        className="px-4 py-2.5 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs"
                       >
                         Cancel
                       </button>
@@ -851,44 +844,46 @@ export default function ClientDashboard() {
                 </form>
               </div>
 
-              <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-                <h3 style={{ margin: "0 0 16px 0", fontSize: "18px" }}>Saved Catalog ({services.length})</h3>
+              <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+                <h3 className="text-base font-bold mb-4">Saved Catalog ({services.length})</h3>
                 {services.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "32px", color: theme.textSecondary, fontSize: "14px" }}>
-                    No services in the catalog yet. Use the form on the left to add one.
+                  <div style={{ color: theme.textSecondary }} className="text-center py-8 text-xs">
+                    No services in catalog. Add one from the form.
                   </div>
                 ) : (
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                    <thead>
-                      <tr style={{ borderBottom: `1px solid ${theme.cardBorder}`, color: theme.textSecondary, textTransform: "uppercase", fontSize: "11px", textAlign: "left" }}>
-                        <th style={{ padding: "10px" }}>Service Name</th>
-                        <th style={{ padding: "10px" }}>Standard Rate</th>
-                        <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {services.map((srv) => (
-                        <tr key={srv.id} style={{ borderBottom: `1px solid ${theme.cardBorder}` }}>
-                          <td style={{ padding: "12px 10px", fontWeight: "600" }}>{srv.name}</td>
-                          <td style={{ padding: "12px 10px", fontWeight: "700", color: "#16a34a" }}>₹{Number(srv.default_rate).toLocaleString("en-IN")}</td>
-                          <td style={{ padding: "12px 10px", textAlign: "right" }}>
-                            <button
-                              onClick={() => handleStartEditService(srv)}
-                              style={{ backgroundColor: "#e0e7ff", color: "#4338ca", border: "none", padding: "5px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer", marginRight: "6px" }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteService(srv.id)}
-                              style={{ backgroundColor: "#fee2e2", color: "#dc2626", border: "none", padding: "5px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer" }}
-                            >
-                              Delete
-                            </button>
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs border-collapse min-w-[320px]">
+                      <thead>
+                        <tr style={{ borderColor: theme.cardBorder, color: theme.textSecondary }} className="border-b text-[11px] uppercase">
+                          <th className="p-2">Name</th>
+                          <th className="p-2">Rate</th>
+                          <th className="p-2 text-right">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {services.map((srv) => (
+                          <tr key={srv.id} style={{ borderColor: theme.cardBorder }} className="border-b">
+                            <td className="p-2 font-semibold">{srv.name}</td>
+                            <td className="p-2 font-bold text-emerald-600">₹{Number(srv.default_rate).toLocaleString("en-IN")}</td>
+                            <td className="p-2 text-right">
+                              <button
+                                onClick={() => handleStartEditService(srv)}
+                                className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-bold mr-1.5"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteService(srv.id)}
+                                className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-[11px] font-bold"
+                              >
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
@@ -896,16 +891,16 @@ export default function ClientDashboard() {
 
           {/* TAB: PAYMENTS */}
           {activeTab === "payments" && (
-            <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-5">
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "18px" }}>Payment Tracker & Ledger</h3>
-                  <p style={{ margin: "4px 0 0", fontSize: "13px", color: theme.textSecondary }}>
-                    Monitor outstanding receivables and reconcile payments with a single click.
+                  <h3 className="text-base sm:text-lg font-bold">Payments & Udhaar Tracker</h3>
+                  <p style={{ color: theme.textSecondary }} className="text-xs mt-0.5">
+                    Ek click par Paid ya Due status update karein.
                   </p>
                 </div>
-                <div style={{ padding: "8px 16px", backgroundColor: "#fee2e2", color: "#b91c1c", borderRadius: "8px", fontWeight: "700", fontSize: "14px" }}>
-                  Total Due: ₹{totalPending.toLocaleString("en-IN")}
+                <div className="bg-red-100 text-red-800 px-3.5 py-1.5 rounded-lg font-bold text-xs sm:text-sm self-start sm:self-auto">
+                  Total Outstanding: ₹{totalPending.toLocaleString("en-IN")}
                 </div>
               </div>
 
@@ -923,51 +918,45 @@ export default function ClientDashboard() {
 
           {/* TAB: REPORTS */}
           {activeTab === "reports" && (
-            <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+            <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6 flex flex-col gap-5">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                 <div>
-                  <h3 style={{ margin: 0, fontSize: "18px" }}>Sales & Financial Analytics</h3>
-                  <p style={{ margin: "4px 0 0", fontSize: "13px", color: theme.textSecondary }}>
-                    Aggregate performance over Daily, Weekly, Monthly, Quarterly, and Yearly intervals.
+                  <h3 className="text-base sm:text-lg font-bold">Sales & Financial Analytics</h3>
+                  <p style={{ color: theme.textSecondary }} className="text-xs mt-0.5">
+                    Filter by timeline to track performance.
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <div className="flex flex-wrap gap-1.5">
                   {(["daily", "weekly", "monthly", "3m", "6m", "9m", "12m"] as const).map((dur) => (
                     <button
                       key={dur}
                       onClick={() => setReportDuration(dur)}
                       style={{
-                        padding: "6px 12px",
-                        borderRadius: "8px",
-                        border: "none",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        textTransform: "uppercase",
                         backgroundColor: reportDuration === dur ? "#4f46e5" : theme.navHover,
                         color: reportDuration === dur ? "#fff" : theme.textSecondary,
-                        cursor: "pointer",
                       }}
+                      className="px-2.5 py-1 rounded text-[11px] font-bold uppercase transition"
                     >
-                      {dur === "daily" ? "Daily" : dur === "weekly" ? "Weekly" : dur === "monthly" ? "Monthly" : dur}
+                      {dur}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
-                <div style={{ padding: "16px", borderRadius: "10px", backgroundColor: theme.navHover }}>
-                  <div style={{ fontSize: "12px", color: theme.textSecondary }}>Period Invoices</div>
-                  <div style={{ fontSize: "22px", fontWeight: "700" }}>{filteredReportInvoices.length}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div style={{ backgroundColor: theme.navHover }} className="p-3.5 rounded-xl">
+                  <div style={{ color: theme.textSecondary }} className="text-[11px]">Period Invoices</div>
+                  <div className="text-xl font-bold mt-1">{filteredReportInvoices.length}</div>
                 </div>
-                <div style={{ padding: "16px", borderRadius: "10px", backgroundColor: theme.navHover }}>
-                  <div style={{ fontSize: "12px", color: "#16a34a" }}>Revenue Collected</div>
-                  <div style={{ fontSize: "22px", fontWeight: "700", color: "#16a34a" }}>
+                <div style={{ backgroundColor: theme.navHover }} className="p-3.5 rounded-xl">
+                  <div className="text-[11px] text-emerald-600">Collected</div>
+                  <div className="text-xl font-bold text-emerald-600 mt-1">
                     ₹{filteredReportInvoices.filter((i) => i.payment_status === "paid").reduce((s, c) => s + Number(c.total_amount), 0).toLocaleString("en-IN")}
                   </div>
                 </div>
-                <div style={{ padding: "16px", borderRadius: "10px", backgroundColor: theme.navHover }}>
-                  <div style={{ fontSize: "12px", color: "#dc2626" }}>Pending Balances</div>
-                  <div style={{ fontSize: "22px", fontWeight: "700", color: "#dc2626" }}>
+                <div style={{ backgroundColor: theme.navHover }} className="p-3.5 rounded-xl">
+                  <div className="text-[11px] text-red-600">Pending</div>
+                  <div className="text-xl font-bold text-red-600 mt-1">
                     ₹{filteredReportInvoices.filter((i) => i.payment_status === "pending").reduce((s, c) => s + Number(c.total_amount), 0).toLocaleString("en-IN")}
                   </div>
                 </div>
@@ -986,87 +975,153 @@ export default function ClientDashboard() {
 
           {/* TAB: SETTINGS */}
           {activeTab === "settings" && (
-            <div style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, borderRadius: "14px", padding: "28px", maxWidth: "800px" }}>
-              <h3 style={{ margin: "0 0 8px 0", fontSize: "18px" }}>Organization & Payment Settings</h3>
-              <p style={{ color: theme.textSecondary, fontSize: "13px", marginBottom: "24px" }}>
-                Update your business branding, contact data, and settlement credentials. All details dynamically synchronize with the printable invoice template.
+            <div style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder }} className="border rounded-2xl p-4 sm:p-6 max-w-3xl">
+              <h3 className="text-base sm:text-lg font-bold mb-1">Company & Payment Settings</h3>
+              <p style={{ color: theme.textSecondary }} className="text-xs mb-5">
+                Aapki details bill print aur UPI QR code par automatically update hongi.
               </p>
 
-              <form onSubmit={handleSaveSettings} style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+              <form onSubmit={handleSaveSettings} className="flex flex-col gap-4">
                 {/* Logo file */}
-                <div style={{ padding: "16px", borderRadius: "12px", border: `1px dashed ${theme.cardBorder}`, backgroundColor: theme.navHover, display: "flex", alignItems: "center", gap: "20px" }}>
+                <div style={{ borderColor: theme.cardBorder, backgroundColor: theme.navHover }} className="p-3.5 rounded-xl border border-dashed flex items-center gap-3.5">
                   {logoUrl ? (
-                    <img src={logoUrl} alt="Preview" style={{ width: "70px", height: "70px", borderRadius: "8px", objectFit: "contain", backgroundColor: "#fff", border: "1px solid #cbd5e1" }} />
+                    <img src={logoUrl} alt="Preview" className="w-14 h-14 rounded-lg object-contain bg-white border" />
                   ) : (
-                    <div style={{ width: "70px", height: "70px", borderRadius: "8px", border: "1px dashed #94a3b8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", color: theme.textSecondary, textAlign: "center" }}>
+                    <div style={{ color: theme.textSecondary }} className="w-14 h-14 rounded-lg border border-dashed flex items-center justify-center text-[10px] text-center">
                       No Logo
                     </div>
                   )}
-                  <div style={{ flex: 1 }}>
-                    <label style={{ ...labelStyle, fontSize: "13px" }}>Business Logo (From Device)</label>
-                    <input type="file" accept="image/*" onChange={handleLocalLogoUpload} style={{ fontSize: "12px", marginTop: "4px" }} />
-                    <div style={{ fontSize: "11px", color: theme.textSecondary, marginTop: "4px" }}>PNG, JPG or SVG (Max 2MB)</div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold mb-1">Business Logo</label>
+                    <input type="file" accept="image/*" onChange={handleLocalLogoUpload} className="text-xs w-full" />
                   </div>
                   {logoUrl && (
-                    <button type="button" onClick={() => setLogoUrl("")} style={{ backgroundColor: "#fee2e2", color: "#dc2626", border: "none", padding: "6px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer" }}>
+                    <button type="button" onClick={() => setLogoUrl("")} className="bg-red-100 text-red-700 px-2.5 py-1 rounded text-xs font-bold">
                       Remove
                     </button>
                   )}
                 </div>
 
                 {/* Company details */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={labelStyle}>Company / Trade Name *</label>
-                    <input type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                    <label className="block text-[11px] font-bold mb-1">Company / Shop Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
+                    />
                   </div>
                   <div>
-                    <label style={labelStyle}>Business Contact Phone *</label>
-                    <input type="text" placeholder="e.g. +91 98765 43210" value={companyPhone} onChange={(e) => setCompanyPhone(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                    <label className="block text-[11px] font-bold mb-1">Contact Phone *</label>
+                    <input
+                      type="text"
+                      placeholder="+91 9876543210"
+                      value={companyPhone}
+                      onChange={(e) => setCompanyPhone(e.target.value)}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
+                    />
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label style={labelStyle}>Business Email</label>
-                    <input type="email" placeholder="billing@organization.com" value={companyEmail} onChange={(e) => setCompanyEmail(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                    <label className="block text-[11px] font-bold mb-1">Email</label>
+                    <input
+                      type="email"
+                      placeholder="business@gmail.com"
+                      value={companyEmail}
+                      onChange={(e) => setCompanyEmail(e.target.value)}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
+                    />
                   </div>
                   <div>
-                    <label style={labelStyle}>GSTIN / Tax Registration No. (Optional)</label>
-                    <input type="text" placeholder="e.g. 27AAAAA0000A1Z5" value={gstin} onChange={(e) => setGstin(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                    <label className="block text-[11px] font-bold mb-1">GSTIN (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="27AAAAA0000A1Z5"
+                      value={gstin}
+                      onChange={(e) => setGstin(e.target.value)}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Physical Office / Store Address</label>
-                  <textarea rows={2} placeholder="Suite No, Street Address, City, State, PIN..." value={businessAddress} onChange={(e) => setBusinessAddress(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                  <label className="block text-[11px] font-bold mb-1">Physical Store Address</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Shop No, Road, City, PIN..."
+                    value={businessAddress}
+                    onChange={(e) => setBusinessAddress(e.target.value)}
+                    style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    className="w-full p-2.5 rounded-lg border text-xs"
+                  />
                 </div>
 
                 {/* Bank & Payment */}
-                <div style={{ borderTop: `1px solid ${theme.cardBorder}`, paddingTop: "14px" }}>
-                  <h4 style={{ margin: "0 0 12px 0", fontSize: "15px" }}>Bank Account & UPI Settlement Credentials</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                <div style={{ borderColor: theme.cardBorder }} className="border-t pt-3.5">
+                  <h4 className="text-xs sm:text-sm font-bold mb-3">Bank & UPI Settlement (Prints on Invoice)</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label style={labelStyle}>Bank Name</label>
-                      <input type="text" placeholder="HDFC Bank" value={bankName} onChange={(e) => setBankName(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                      <label className="block text-[11px] font-bold mb-1">Bank Name</label>
+                      <input
+                        type="text"
+                        placeholder="HDFC Bank"
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                        className="w-full p-2.5 rounded-lg border text-xs"
+                      />
                     </div>
                     <div>
-                      <label style={labelStyle}>Account Number</label>
-                      <input type="text" placeholder="501002345678" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                      <label className="block text-[11px] font-bold mb-1">Account Number</label>
+                      <input
+                        type="text"
+                        placeholder="501002345678"
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                        className="w-full p-2.5 rounded-lg border text-xs"
+                      />
                     </div>
                     <div>
-                      <label style={labelStyle}>IFSC / Routing Code</label>
-                      <input type="text" placeholder="HDFC0001234" value={ifscCode} onChange={(e) => setIfscCode(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                      <label className="block text-[11px] font-bold mb-1">IFSC Code</label>
+                      <input
+                        type="text"
+                        placeholder="HDFC0001234"
+                        value={ifscCode}
+                        onChange={(e) => setIfscCode(e.target.value)}
+                        style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                        className="w-full p-2.5 rounded-lg border text-xs"
+                      />
                     </div>
                   </div>
-                  <div style={{ marginTop: "12px" }}>
-                    <label style={labelStyle}>VPA / UPI ID (Generates Dynamic Bill QR Code)</label>
-                    <input type="text" placeholder="e.g. payments@okhdfcbank" value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }} />
+                  <div className="mt-3">
+                    <label className="block text-[11px] font-bold mb-1">UPI ID / VPA (For Dynamic QR)</label>
+                    <input
+                      type="text"
+                      placeholder="payments@okhdfcbank"
+                      value={upiId}
+                      onChange={(e) => setUpiId(e.target.value)}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-full p-2.5 rounded-lg border text-xs"
+                    />
                   </div>
                 </div>
 
-                <button type="submit" disabled={savingSettings} style={{ alignSelf: "flex-start", backgroundColor: "#4f46e5", color: "#fff", border: "none", padding: "10px 24px", borderRadius: "10px", fontWeight: "600", cursor: "pointer" }}>
-                  {savingSettings ? "Saving Settings..." : "Save Configuration"}
+                <button
+                  type="submit"
+                  disabled={savingSettings}
+                  className="w-full sm:w-auto self-start mt-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs transition"
+                >
+                  {savingSettings ? "Saving Settings..." : "Save Settings"}
                 </button>
               </form>
             </div>
@@ -1076,50 +1131,55 @@ export default function ClientDashboard() {
 
       {/* CREATE BILL MODAL */}
       {showBillModal && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: "20px" }}>
-          <div style={{ backgroundColor: theme.cardBg, color: theme.text, width: "100%", maxWidth: "620px", borderRadius: "16px", padding: "24px", maxHeight: "90vh", overflowY: "auto", border: `1px solid ${theme.cardBorder}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, fontSize: "18px" }}>Generate New Invoice</h3>
-              <button onClick={() => setShowBillModal(false)} style={{ background: "none", border: "none", color: theme.textSecondary, fontSize: "20px", cursor: "pointer" }}>✕</button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+          <div
+            style={{ backgroundColor: theme.cardBg, borderColor: theme.cardBorder, color: theme.text }}
+            className="w-full max-w-lg rounded-2xl p-4 sm:p-6 max-h-[92vh] overflow-y-auto border shadow-2xl"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold">Generate New Invoice</h3>
+              <button onClick={() => setShowBillModal(false)} className="text-slate-400 text-lg">✕</button>
             </div>
 
-            <form onSubmit={handleCreateInvoice} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <form onSubmit={handleCreateInvoice} className="flex flex-col gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label style={labelStyle}>Customer Name *</label>
+                  <label className="block text-[11px] font-bold mb-1">Customer Name *</label>
                   <input
                     type="text"
                     required
                     placeholder="Customer Name"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    className="w-full p-2.5 rounded-lg border text-xs"
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>WhatsApp Phone</label>
+                  <label className="block text-[11px] font-bold mb-1">WhatsApp Phone</label>
                   <input
                     type="text"
                     placeholder="9876543210"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    className="w-full p-2.5 rounded-lg border text-xs"
                   />
                 </div>
               </div>
 
-              {/* Items Auto Fill */}
               <div>
-                <label style={labelStyle}>Line Items (Select service to auto-fill rate)</label>
+                <label className="block text-[11px] font-bold mb-1">Items (Select to Auto-fill Rate)</label>
                 {billItems.map((item, index) => (
-                  <div key={index} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                  <div key={index} className="flex gap-2 mb-2 items-center">
                     <input
                       list={`srv-list-${index}`}
                       type="text"
-                      placeholder="Type or select service..."
+                      placeholder="Item name..."
                       value={item.name}
                       onChange={(e) => handleSelectServiceForItem(index, e.target.value)}
-                      style={{ ...inputStyle, flex: 2, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="flex-[2] p-2 rounded-lg border text-xs"
                       required
                     />
                     <datalist id={`srv-list-${index}`}>
@@ -1140,11 +1200,12 @@ export default function ClientDashboard() {
                         n[index].qty = Number(e.target.value);
                         setBillItems(n);
                       }}
-                      style={{ ...inputStyle, flex: 0.7, textAlign: "center", backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-14 p-2 text-center rounded-lg border text-xs"
                     />
                     <input
                       type="number"
-                      placeholder="Rate (₹)"
+                      placeholder="Rate"
                       min="0"
                       value={item.rate || ""}
                       onChange={(e) => {
@@ -1152,14 +1213,15 @@ export default function ClientDashboard() {
                         n[index].rate = Number(e.target.value);
                         setBillItems(n);
                       }}
-                      style={{ ...inputStyle, flex: 1, textAlign: "right", backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                      className="w-20 p-2 text-right rounded-lg border text-xs"
                       required
                     />
                     {billItems.length > 1 && (
                       <button
                         type="button"
                         onClick={() => setBillItems(billItems.filter((_, i) => i !== index))}
-                        style={{ background: "none", border: "none", color: "#ef4444", fontSize: "16px", cursor: "pointer" }}
+                        className="text-red-500 font-bold p-1 text-sm"
                       >
                         ✕
                       </button>
@@ -1169,30 +1231,32 @@ export default function ClientDashboard() {
                 <button
                   type="button"
                   onClick={() => setBillItems([...billItems, { name: "", qty: 1, rate: 0 }])}
-                  style={{ background: "none", border: "none", color: "#4f46e5", fontWeight: "600", fontSize: "13px", cursor: "pointer", padding: "4px 0" }}
+                  className="text-indigo-600 font-bold text-xs mt-1"
                 >
                   + Add Item
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", borderTop: `1px solid ${theme.cardBorder}`, paddingTop: "12px" }}>
+              <div style={{ borderColor: theme.cardBorder }} className="grid grid-cols-2 gap-3 border-t pt-3">
                 <div>
-                  <label style={labelStyle}>Payment Status</label>
+                  <label className="block text-[11px] font-bold mb-1">Status</label>
                   <select
                     value={initialPaymentStatus}
                     onChange={(e) => setInitialPaymentStatus(e.target.value as any)}
-                    style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    className="w-full p-2 rounded-lg border text-xs"
                   >
-                    <option value="paid">✅ Paid (Settled)</option>
-                    <option value="pending">⏳ Pending (Due / Credit)</option>
+                    <option value="paid">✅ Paid</option>
+                    <option value="pending">⏳ Pending</option>
                   </select>
                 </div>
                 <div>
-                  <label style={labelStyle}>Applicable Tax</label>
+                  <label className="block text-[11px] font-bold mb-1">Tax / GST</label>
                   <select
                     value={taxPercent}
                     onChange={(e) => setTaxPercent(Number(e.target.value))}
-                    style={{ ...inputStyle, backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    style={{ backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }}
+                    className="w-full p-2 rounded-lg border text-xs"
                   >
                     <option value={0}>0% Tax</option>
                     <option value={5}>5% GST</option>
@@ -1202,144 +1266,130 @@ export default function ClientDashboard() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: theme.navHover, padding: "12px", borderRadius: "10px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "16px", fontWeight: "700" }}>
-                <span>Grand Total:</span>
-                <span style={{ color: "#4f46e5" }}>₹{grandTotal.toFixed(2)}</span>
+              <div style={{ backgroundColor: theme.navHover }} className="p-3 rounded-lg flex justify-between items-center text-sm font-bold">
+                <span>Total Amount:</span>
+                <span className="text-indigo-600 text-base">₹{grandTotal.toFixed(2)}</span>
               </div>
 
               <button
                 type="submit"
                 disabled={savingBill}
-                style={{ backgroundColor: "#4f46e5", color: "#fff", border: "none", padding: "12px", borderRadius: "10px", fontWeight: "700", cursor: "pointer" }}
+                className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition disabled:opacity-50"
               >
-                {savingBill ? "Processing Invoice..." : `Generate & Save (₹${grandTotal.toFixed(2)})`}
+                {savingBill ? "Processing..." : `Generate Bill (₹${grandTotal.toFixed(2)})`}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* PRINT RECEIPT MODAL (CLEAN PDF TEMPLATE) */}
+      {/* PRINT RECEIPT MODAL */}
       {printingInvoice && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ backgroundColor: "#ffffff", color: "#000000", width: "100%", maxWidth: "720px", borderRadius: "12px", padding: "28px", maxHeight: "95vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}>
-            {/* Modal Controls (Not Printed) */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", borderBottom: "1px solid #e2e8f0", paddingBottom: "12px" }}>
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white text-black w-full max-w-2xl rounded-2xl p-4 sm:p-7 max-h-[95vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4 border-b pb-3">
               <button
                 onClick={triggerCleanPrint}
-                style={{
-                  backgroundColor: "#4f46e5",
-                  color: "#ffffff",
-                  border: "none",
-                  padding: "9px 20px",
-                  borderRadius: "8px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  fontSize: "14px",
-                }}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-xs flex items-center gap-1.5"
               >
                 🖨️ Print / Save as PDF
               </button>
-              <button
-                onClick={() => setPrintingInvoice(null)}
-                style={{ background: "none", border: "none", fontSize: "20px", color: "#64748b", cursor: "pointer", fontWeight: "bold" }}
-              >
-                ✕ Close
+              <button onClick={() => setPrintingInvoice(null)} className="text-slate-500 font-bold text-lg">
+                ✕
               </button>
             </div>
 
-            {/* Clean Invoice Printable Container */}
+            {/* Printable Container */}
             <div id="clean-invoice-print-area">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #e2e8f0", paddingBottom: "16px" }}>
+              <div className="flex justify-between items-start border-b-2 border-slate-200 pb-4">
                 <div>
                   {company?.logo_url && (
-                    <img src={company.logo_url} alt="Logo" style={{ height: "52px", objectFit: "contain", marginBottom: "8px", display: "block" }} />
+                    <img src={company.logo_url} alt="Logo" className="h-10 object-contain mb-2 block" />
                   )}
-                  <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "800", color: "#0f172a" }}>{company?.name}</h2>
-                  {company?.business_address && <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#475569" }}>{company.business_address}</p>}
-                  <p style={{ margin: "3px 0 0", fontSize: "12px", color: "#475569" }}>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">{company?.name}</h2>
+                  {company?.business_address && <p className="text-[11px] text-slate-600 mt-1">{company.business_address}</p>}
+                  <p className="text-[11px] text-slate-600 mt-0.5">
                     {company?.phone && <span>Mobile: <b>{company.phone}</b></span>}
                     {company?.phone && company?.email && <span> | </span>}
                     {company?.email && <span>Email: <b>{company.email}</b></span>}
                   </p>
-                  {company?.gstin && <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#475569" }}>GSTIN: <b>{company.gstin}</b></p>}
+                  {company?.gstin && <p className="text-[11px] text-slate-600 mt-0.5">GSTIN: <b>{company.gstin}</b></p>}
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <h3 style={{ margin: 0, fontSize: "20px", color: "#4f46e5", letterSpacing: "1px" }}>TAX INVOICE</h3>
-                  <div style={{ fontSize: "13px", marginTop: "6px", color: "#1e293b" }}><b>Invoice #:</b> {printingInvoice.invoice_number}</div>
-                  <div style={{ fontSize: "13px", color: "#1e293b" }}><b>Date:</b> {new Date(printingInvoice.created_at).toLocaleDateString("en-IN")}</div>
-                  <div style={{ marginTop: "8px" }}>
-                    <span style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "bold", backgroundColor: printingInvoice.payment_status === "paid" ? "#dcfce7" : "#fee2e2", color: printingInvoice.payment_status === "paid" ? "#15803d" : "#b91c1c", display: "inline-block" }}>
-                      STATUS: {printingInvoice.payment_status.toUpperCase()}
+                <div className="text-right">
+                  <h3 className="text-base sm:text-lg font-black text-indigo-600">TAX INVOICE</h3>
+                  <div className="text-xs font-semibold mt-1 text-slate-800">#{printingInvoice.invoice_number}</div>
+                  <div className="text-[11px] text-slate-600">{new Date(printingInvoice.created_at).toLocaleDateString("en-IN")}</div>
+                  <div className="mt-1">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      printingInvoice.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                    }`}>
+                      {printingInvoice.payment_status.toUpperCase()}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ margin: "18px 0", fontSize: "14px" }}>
-                <div style={{ fontSize: "11px", color: "#64748b", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "0.5px" }}>Billed To:</div>
-                <div style={{ fontSize: "17px", fontWeight: "700", color: "#0f172a", marginTop: "2px" }}>{printingInvoice.customer_name}</div>
-                {printingInvoice.customer_phone && <div style={{ color: "#475569", fontSize: "13px", marginTop: "2px" }}>Phone: {printingInvoice.customer_phone}</div>}
+              <div className="my-3.5 text-xs">
+                <div className="text-[10px] uppercase font-bold text-slate-400">Billed To:</div>
+                <div className="text-sm font-bold text-slate-900">{printingInvoice.customer_name}</div>
+                {printingInvoice.customer_phone && <div className="text-slate-600">Phone: {printingInvoice.customer_phone}</div>}
               </div>
 
-              <table style={{ width: "100%", borderCollapse: "collapse", margin: "18px 0" }}>
+              <table className="w-full border-collapse my-3 text-xs">
                 <thead>
-                  <tr style={{ borderBottom: "2px solid #0f172a", fontSize: "12px", textTransform: "uppercase", color: "#334155" }}>
-                    <th style={{ textAlign: "left", padding: "8px 0" }}>Description</th>
-                    <th style={{ textAlign: "center", padding: "8px 0", width: "70px" }}>Qty</th>
-                    <th style={{ textAlign: "right", padding: "8px 0", width: "110px" }}>Rate</th>
-                    <th style={{ textAlign: "right", padding: "8px 0", width: "120px" }}>Amount</th>
+                  <tr className="border-b-2 border-slate-900 text-slate-700 uppercase text-[10px]">
+                    <th className="text-left py-1.5">Description</th>
+                    <th className="text-center py-1.5 w-12">Qty</th>
+                    <th className="text-right py-1.5 w-20">Rate</th>
+                    <th className="text-right py-1.5 w-20">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
                   {printingInvoice.items && printingInvoice.items.length > 0 ? (
                     printingInvoice.items.map((it, idx) => (
-                      <tr key={idx} style={{ borderBottom: "1px solid #f1f5f9", fontSize: "13px" }}>
-                        <td style={{ padding: "10px 0", color: "#1e293b" }}>{it.name}</td>
-                        <td style={{ textAlign: "center", padding: "10px 0", color: "#475569" }}>{it.qty}</td>
-                        <td style={{ textAlign: "right", padding: "10px 0", color: "#475569" }}>₹{Number(it.rate).toFixed(2)}</td>
-                        <td style={{ textAlign: "right", padding: "10px 0", fontWeight: "600", color: "#0f172a" }}>₹{(it.qty * it.rate).toFixed(2)}</td>
+                      <tr key={idx} className="border-b border-slate-100">
+                        <td className="py-2">{it.name}</td>
+                        <td className="text-center py-2 text-slate-600">{it.qty}</td>
+                        <td className="text-right py-2 text-slate-600">₹{Number(it.rate).toFixed(2)}</td>
+                        <td className="text-right py-2 font-bold text-slate-900">₹{(it.qty * it.rate).toFixed(2)}</td>
                       </tr>
                     ))
                   ) : (
-                    <tr style={{ borderBottom: "1px solid #f1f5f9", fontSize: "13px" }}>
-                      <td style={{ padding: "10px 0" }}>Products / Services Rendered</td>
-                      <td style={{ textAlign: "center", padding: "10px 0" }}>1</td>
-                      <td style={{ textAlign: "right", padding: "10px 0" }}>₹{printingInvoice.total_amount}</td>
-                      <td style={{ textAlign: "right", padding: "10px 0", fontWeight: "600" }}>₹{printingInvoice.total_amount}</td>
+                    <tr className="border-b border-slate-100">
+                      <td className="py-2">Item</td>
+                      <td className="text-center py-2">1</td>
+                      <td className="text-right py-2">₹{printingInvoice.total_amount}</td>
+                      <td className="text-right py-2 font-bold">₹{printingInvoice.total_amount}</td>
                     </tr>
                   )}
-                  <tr style={{ borderTop: "2px solid #0f172a", fontWeight: "700", fontSize: "16px" }}>
-                    <td colSpan={3} style={{ padding: "14px 0", textAlign: "right", color: "#0f172a" }}>Grand Total:</td>
-                    <td style={{ padding: "14px 0", textAlign: "right", color: "#4f46e5", fontSize: "18px" }}>
+                  <tr className="border-t-2 border-slate-900 font-bold">
+                    <td colSpan={3} className="py-2.5 text-right text-slate-900">Total:</td>
+                    <td className="py-2.5 text-right text-indigo-600 text-sm">
                       ₹{Number(printingInvoice.total_amount).toLocaleString("en-IN")}
                     </td>
                   </tr>
                 </tbody>
               </table>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderTop: "1px dashed #cbd5e1", paddingTop: "16px", marginTop: "24px" }}>
-                <div style={{ fontSize: "12px", color: "#334155", lineHeight: "1.6" }}>
-                  <div style={{ fontWeight: "700", marginBottom: "4px", color: "#0f172a" }}>Bank & Payment Information:</div>
+              <div className="flex justify-between items-end border-t border-dashed border-slate-300 pt-3 mt-4">
+                <div className="text-[11px] text-slate-700 leading-relaxed">
+                  <div className="font-bold text-slate-900">Bank Details:</div>
                   {company?.bank_name && <div>Bank: <b>{company.bank_name}</b></div>}
-                  {company?.account_number && <div>Account No: <b>{company.account_number}</b></div>}
-                  {company?.ifsc_code && <div>IFSC Code: <b>{company.ifsc_code}</b></div>}
-                  {company?.upi_id && <div>UPI ID: <b>{company.upi_id}</b></div>}
+                  {company?.account_number && <div>A/c: <b>{company.account_number}</b></div>}
+                  {company?.ifsc_code && <div>IFSC: <b>{company.ifsc_code}</b></div>}
+                  {company?.upi_id && <div>UPI: <b>{company.upi_id}</b></div>}
                 </div>
 
                 {company?.upi_id && (
-                  <div style={{ textAlign: "center" }}>
+                  <div className="text-center">
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(
                         `upi://pay?pa=${company.upi_id}&pn=${company.name}&am=${printingInvoice.total_amount}&cu=INR`
                       )}`}
                       alt="UPI QR"
-                      style={{ width: "95px", height: "95px", border: "1px solid #e2e8f0", padding: "4px", borderRadius: "8px", display: "block", margin: "0 auto" }}
+                      className="w-20 h-20 border p-1 rounded-lg mx-auto"
                     />
-                    <div style={{ fontSize: "10px", color: "#64748b", marginTop: "3px", fontWeight: "500" }}>Scan & Pay via UPI</div>
+                    <div className="text-[9px] text-slate-500 mt-1 font-semibold">Scan & Pay</div>
                   </div>
                 )}
               </div>
@@ -1369,82 +1419,73 @@ function InvoiceTable({
   showStatusToggleAction?: boolean;
 }) {
   if (invoices.length === 0) {
-    return <div style={{ textAlign: "center", padding: "32px", color: theme.textSecondary, fontSize: "14px" }}>No invoice records available.</div>;
+    return <div style={{ color: theme.textSecondary }} className="text-center py-8 text-xs">No invoice records available.</div>;
   }
 
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+    <div className="overflow-x-auto">
+      <table className="w-full text-left text-xs border-collapse min-w-[540px]">
         <thead>
-          <tr style={{ borderBottom: `1px solid ${theme.cardBorder}`, color: theme.textSecondary, textTransform: "uppercase", fontSize: "11px" }}>
-            <th style={{ padding: "10px" }}>Invoice #</th>
-            <th style={{ padding: "10px" }}>Customer</th>
-            <th style={{ padding: "10px" }}>Phone</th>
-            <th style={{ padding: "10px" }}>Date</th>
-            <th style={{ padding: "10px" }}>Amount</th>
-            <th style={{ padding: "10px" }}>Status</th>
-            <th style={{ padding: "10px", textAlign: "right" }}>Actions</th>
+          <tr style={{ borderColor: theme.cardBorder, color: theme.textSecondary }} className="border-b text-[11px] uppercase">
+            <th className="p-2.5">Invoice #</th>
+            <th className="p-2.5">Customer</th>
+            <th className="p-2.5">Date</th>
+            <th className="p-2.5">Amount</th>
+            <th className="p-2.5">Status</th>
+            <th className="p-2.5 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {invoices.map((inv) => (
-            <tr key={inv.id} style={{ borderBottom: `1px solid ${theme.cardBorder}` }}>
-              <td style={{ padding: "12px 10px", fontFamily: "monospace", fontWeight: "600" }}>{inv.invoice_number}</td>
-              <td style={{ padding: "12px 10px", fontWeight: "600" }}>{inv.customer_name}</td>
-              <td style={{ padding: "12px 10px", color: theme.textSecondary }}>{inv.customer_phone || "-"}</td>
-              <td style={{ padding: "12px 10px", color: theme.textSecondary }}>{new Date(inv.created_at).toLocaleDateString("en-IN")}</td>
-              <td style={{ padding: "12px 10px", fontWeight: "700" }}>₹{Number(inv.total_amount).toLocaleString("en-IN")}</td>
-              <td style={{ padding: "12px 10px" }}>
+            <tr key={inv.id} style={{ borderColor: theme.cardBorder }} className="border-b">
+              <td className="p-2.5 font-mono font-bold">{inv.invoice_number}</td>
+              <td className="p-2.5">
+                <div className="font-semibold">{inv.customer_name}</div>
+                {inv.customer_phone && <div style={{ color: theme.textSecondary }} className="text-[10px]">{inv.customer_phone}</div>}
+              </td>
+              <td style={{ color: theme.textSecondary }} className="p-2.5">{new Date(inv.created_at).toLocaleDateString("en-IN")}</td>
+              <td className="p-2.5 font-bold">₹{Number(inv.total_amount).toLocaleString("en-IN")}</td>
+              <td className="p-2.5">
                 <span
-                  style={{
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    fontSize: "11px",
-                    fontWeight: "700",
-                    backgroundColor: inv.payment_status === "paid" ? "#dcfce7" : "#fee2e2",
-                    color: inv.payment_status === "paid" ? "#15803d" : "#b91c1c",
-                  }}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                    inv.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"
+                  }`}
                 >
                   {inv.payment_status.toUpperCase()}
                 </span>
               </td>
-              <td style={{ padding: "12px 10px", textAlign: "right" }}>
-                {showStatusToggleAction && (
+              <td className="p-2.5 text-right">
+                <div className="inline-flex gap-1 flex-wrap justify-end">
+                  {showStatusToggleAction && (
+                    <button
+                      onClick={() => onToggleStatus(inv.id, inv.payment_status)}
+                      className={`px-2 py-1 rounded text-[10px] font-bold ${
+                        inv.payment_status === "paid" ? "bg-slate-100 text-slate-700" : "bg-emerald-500 text-white"
+                      }`}
+                    >
+                      {inv.payment_status === "paid" ? "Due" : "Paid"}
+                    </button>
+                  )}
                   <button
-                    onClick={() => onToggleStatus(inv.id, inv.payment_status)}
-                    style={{
-                      padding: "5px 10px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontSize: "11px",
-                      fontWeight: "700",
-                      marginRight: "6px",
-                      cursor: "pointer",
-                      backgroundColor: inv.payment_status === "paid" ? "#f1f5f9" : "#22c55e",
-                      color: inv.payment_status === "paid" ? "#475569" : "#ffffff",
-                    }}
+                    onClick={() => onWhatsApp(inv)}
+                    className="bg-emerald-500 text-white px-2 py-1 rounded text-[10px] font-bold"
                   >
-                    {inv.payment_status === "paid" ? "Mark Due" : "Mark Paid"}
+                    WA
                   </button>
-                )}
-                <button
-                  onClick={() => onWhatsApp(inv)}
-                  style={{ backgroundColor: "#22c55e", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer", marginRight: "6px" }}
-                >
-                  WhatsApp
-                </button>
-                <button
-                  onClick={() => onPrint(inv)}
-                  style={{ backgroundColor: theme.navHover, color: theme.text, border: `1px solid ${theme.cardBorder}`, padding: "5px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "600", cursor: "pointer", marginRight: "6px" }}
-                >
-                  Print
-                </button>
-                <button
-                  onClick={() => onDeleteInvoice(inv.id, inv.invoice_number)}
-                  style={{ backgroundColor: "#fee2e2", color: "#dc2626", border: "none", padding: "5px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "700", cursor: "pointer" }}
-                >
-                  Delete
-                </button>
+                  <button
+                    onClick={() => onPrint(inv)}
+                    style={{ backgroundColor: theme.navHover, borderColor: theme.cardBorder }}
+                    className="border px-2 py-1 rounded text-[10px] font-bold"
+                  >
+                    Print
+                  </button>
+                  <button
+                    onClick={() => onDeleteInvoice(inv.id, inv.invoice_number)}
+                    className="bg-red-100 text-red-700 px-2 py-1 rounded text-[10px] font-bold"
+                  >
+                    Del
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -1453,6 +1494,3 @@ function InvoiceTable({
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = { display: "block", fontSize: "12px", fontWeight: "600", marginBottom: "5px" };
-const inputStyle: React.CSSProperties = { width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1px solid", fontSize: "13px", boxSizing: "border-box" };

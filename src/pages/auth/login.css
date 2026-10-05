@@ -13,9 +13,10 @@ html, body, #root {
   margin: 0;
   padding: 0;
   background-color: #dce3f6;
+  overflow-x: hidden;
 }
 
-/* ਪੇਜ ਦਾ ਬੈਕਗਰਾਊਂਡ ਰੈਪਰ */
+/* Page Background Wrapper */
 .login-page {
   min-height: 100vh;
   width: 100%;
@@ -26,7 +27,7 @@ html, body, #root {
   background: radial-gradient(circle at 10% 15%, #f1f4fd 0%, #dbe3f8 100%);
 }
 
-/* ਮੁੱਖ ਕਾਰਡ ਕੰਟੇਨਰ */
+/* Main Card Container */
 .login-container {
   display: flex;
   width: 100%;
@@ -38,7 +39,7 @@ html, body, #root {
   box-shadow: 0 25px 65px -12px rgba(22, 28, 80, 0.22);
 }
 
-/* ================= ਖੱਬਾ ਬ੍ਰਾਂਡ ਪੈਨਲ ================= */
+/* ================= LEFT BRAND PANEL (DESKTOP) ================= */
 .login-brand-panel {
   flex: 1.35;
   background: radial-gradient(circle at 80% 55%, #3f1ecc 0%, transparent 60%),
@@ -57,7 +58,6 @@ html, body, #root {
   z-index: 2;
 }
 
-/* ਲੋਗੋ ਬਾਕਸ */
 .company-logo-box {
   width: 95px;
   height: 60px;
@@ -77,7 +77,6 @@ html, body, #root {
   object-fit: contain;
 }
 
-/* ਬ੍ਰਾਂਡ ਸਿਰਲੇਖ */
 .brand-title {
   font-size: 36px !important;
   font-weight: 800 !important;
@@ -105,7 +104,6 @@ html, body, #root {
   max-width: 410px;
 }
 
-/* ਵਿਚਕਾਰਲਾ ਲੇਆਉਟ */
 .brand-middle-area {
   display: flex;
   align-items: center;
@@ -160,7 +158,6 @@ html, body, #root {
   color: #928ebd;
 }
 
-/* ਮੌਕਅੱਪ ਚਿੱਤਰ ਕੰਟੇਨਰ */
 .brand-mockup-wrap {
   width: 340px;
   height: 240px;
@@ -178,7 +175,6 @@ html, body, #root {
   transform: scale(1.05);
 }
 
-/* ਹੇਠਲੇ ਅੰਕੜੇ (ਸਹੀ ਸਪੇਸਿੰਗ ਵਾਲਾ ਕੋਡ) */
 .brand-stats {
   display: flex;
   justify-content: flex-start;
@@ -226,7 +222,7 @@ html, body, #root {
   margin-top: 2px;
 }
 
-/* ================= ਸੱਜਾ ਲੌਗਇਨ ਫਾਰਮ ਪੈਨਲ ================= */
+/* ================= RIGHT LOGIN FORM PANEL ================= */
 .login-form-panel {
   flex: 1;
   padding: 38px 48px;
@@ -288,7 +284,6 @@ html, body, #root {
   margin: 4px 0 22px;
 }
 
-/* ਗੂਗਲ ਬਟਨ */
 .google-login-button {
   width: 100%;
   display: flex;
@@ -311,7 +306,6 @@ html, body, #root {
   height: 18px;
 }
 
-/* ਡਿਵਾਈਡਰ */
 .login-divider {
   display: flex;
   align-items: center;
@@ -331,7 +325,6 @@ html, body, #root {
   font-weight: 700;
 }
 
-/* ਇਨਪੁਟ ਫੀਲਡਾਂ */
 .login-field {
   margin-bottom: 15px;
 }
@@ -385,7 +378,6 @@ html, body, #root {
   font-size: 14px;
 }
 
-/* ਵਿਕਲਪ (Options) */
 .login-options {
   display: flex;
   justify-content: space-between;
@@ -411,7 +403,6 @@ html, body, #root {
   cursor: pointer;
 }
 
-/* ਸਾਈਨ-ਇਨ ਬਟਨ */
 .sign-in-button {
   width: 100%;
   background: linear-gradient(90deg, #5835e5 0%, #7653f5 100%);
@@ -447,12 +438,70 @@ html, body, #root {
   margin-top: 6px;
 }
 
-/* ਮੋਬਾਈਲ ਤੇ ਟੈਬਲੇਟ ਲਈ */
+/* ================= MOBILE & TABLET RESPONSIVE FIX ================= */
 @media (max-width: 960px) {
+  .login-page {
+    padding: 16px;
+    align-items: flex-start;
+  }
+
   .login-container {
     flex-direction: column;
+    min-height: auto;
+    border-radius: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   }
+
+  /* Left panel mobile par hide taaki screen zoom-out na ho */
   .login-brand-panel {
     display: none;
+  }
+
+  /* Form panel pure phone screen me fit hoga */
+  .login-form-panel {
+    padding: 28px 20px;
+    width: 100%;
+  }
+
+  .security-tag-wrapper {
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+
+  .login-heading h2 {
+    font-size: 24px;
+    text-align: center;
+  }
+
+  .login-heading p {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .login-options {
+    flex-direction: row;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 10px;
+  }
+
+  .login-container {
+    border-radius: 18px;
+  }
+
+  .login-form-panel {
+    padding: 24px 16px;
+  }
+
+  .login-heading h2 {
+    font-size: 22px;
+  }
+
+  .input-box input {
+    font-size: 14px; /* iOS auto-zoom prevent karne ke liye */
   }
 }
